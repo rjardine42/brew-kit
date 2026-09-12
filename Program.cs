@@ -1,6 +1,5 @@
 ﻿using Spectre.Console;
 
-#region Title
 
 var title = new FigletText("Brew Kit")
 {
@@ -16,11 +15,6 @@ var titleSection = new Panel(title)
 };
 
 AnsiConsole.Write(titleSection);
-
-#endregion
-
-#region SD Detection
-
 AnsiConsole.MarkupLine("Searching for SD Card...");
 
 List<DriveInfo> drives = [];
@@ -57,11 +51,32 @@ if (string.Compare(selectedDriveFormat, "FAT32") != 0
 {
     AnsiConsole.WriteWarning("Chosen drive must be formatted to FAT32. Doing so will result in deletion of ALL data currently on the drive.", newline: false);
     AnsiConsole.MarkupLine("[red]Please backup any important data before proceeding.[/]");
-    // Call convert here
+
+    if (!AnsiConsole.Confirm($"Erase ALL data on {Markup.Escape(chosenDrive.Name)} and format as FAT32?", defaultValue: false))
+    {
+        AnsiConsole.WriteError("Aborted.");
+        return;
+    }
+
+    var formatted = false;
+
+    await AnsiConsole.Status()
+        .Spinner(Spinner.Known.Dots)
+        .StartAsync("Formatting drive...", async ctx =>
+        {
+            formatted = await FormatHelper.FormatToFat32Async(chosenDrive);
+        });
+
+    if (formatted)
+    {
+        AnsiConsole.WriteSuccess("Drive formatted to FAT32.");
+    }
+    else
+    {
+        AnsiConsole.WriteError("Formatting failed.");
+    }
 }
 else
 {
     AnsiConsole.WriteSuccess("Drive formatted correctly.");
 }
-
-#endregion
